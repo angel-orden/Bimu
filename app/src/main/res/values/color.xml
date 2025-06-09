@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="teal_700">#354391</color>
+    <!-- Tonos principales -->
+    <color name="primary">#467C4A</color>         <!-- Verde bosque -->
+    <color name="onPrimary">#FFFFFF</color>       <!-- Texto sobre verde -->
+    <color name="primaryContainer">#C6EFC7</color> <!-- Verde claro/hoja -->
+    <color name="onPrimaryContainer">#194D22</color>
+
+    <color name="secondary">#A08341</color>        <!-- Marrón claro/tierra -->
+    <color name="onSecondary">#FFFFFF</color>
+    <color name="secondaryContainer">#EFE3C6</color>
+    <color name="onSecondaryContainer">#3E2E10</color>
+
+    <color name="tertiary">#8CBF3F</color>         <!-- Verde lima musgo (toque aventurero) -->
+    <color name="onTertiary">#FFFFFF</color>
+    <color name="tertiaryContainer">#E5F7D1</color>
+    <color name="onTertiaryContainer">#405A13</color>
+
+    <!-- Fondo y superficies -->
+    <color name="background">#F9F8F3</color>       <!-- Beige claro -->
+    <color name="onBackground">#2C2C2C</color>
+    <color name="surface">#F5F3ED</color>          <!-- Más oscuro para distinguir -->
+    <color name="onSurface">#233019</color>
+
+    <!-- Error/alerta (rojo apagado) -->
+    <color name="error">#BF5B43</color>
+    <color name="onError">#FFFFFF</color>
+
+    <!-- Otros (puedes añadir más según tus necesidades) -->
+</resources>

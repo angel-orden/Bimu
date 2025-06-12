@@ -1,28 +1,19 @@
 package com.example.bimu.data.dao
 
 import com.example.bimu.data.models.Message
-import io.realm.kotlin.Realm
-import io.realm.kotlin.ext.query
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import retrofit2.Response
+import retrofit2.http.*
 
-class MessageDAO(private val realm: Realm) {
-    suspend fun insert(message: Message) {
-        realm.write { copyToRealm(message) }
-    }
+interface MessageApi {
+    @POST("messages") suspend fun createMessage(@Body message: Message): Response<Message>
+    @GET("messages") suspend fun getAllMessages(): Response<List<Message>>
+    @GET("messages/{id}") suspend fun getMessageById(@Path("id") id: String): Response<Message>
+    @DELETE("messages/{id}") suspend fun deleteMessageById(@Path("id") id: String): Response<Unit>
+}
 
-    fun getAll(): Flow<List<Message>> {
-        return realm.query<Message>().asFlow().map { it.list }
-    }
-
-    suspend fun getById(id: String): Message? {
-        return realm.query<Message>("id == $0", id).first().find()
-    }
-
-    suspend fun deleteById(id: String) {
-        realm.write {
-            val msg = query<Message>("id == $0", id).first().find()
-            msg?.let { delete(it) }
-        }
-    }
+class MessageDAO(private val api: MessageApi) {
+    suspend fun insert(message: Message): Message? = api.createMessage(message).body()
+    suspend fun getAll(): List<Message> = api.getAllMessages().body() ?: emptyList()
+    suspend fun getById(id: String): Message? = api.getMessageById(id).body()
+    suspend fun deleteById(id: String): Boolean = api.deleteMessageById(id).isSuccessful
 }

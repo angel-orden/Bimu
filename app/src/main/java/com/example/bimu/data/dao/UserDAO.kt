@@ -1,65 +1,35 @@
 package com.example.bimu.data.dao
 
-import com.example.bimu.data.models.Achievement
 import com.example.bimu.data.models.User
-import com.example.bimu.data.models.UserAchievements
-import io.realm.kotlin.Realm
-import io.realm.kotlin.ext.query
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import retrofit2.Response
+import retrofit2.http.*
 
-class UserDAO(private val realm: Realm) {
-    suspend fun insert(user: User) {
-        realm.write { copyToRealm(user) }
-    }
+interface UserApi {
+    @POST("registerUser")
+    suspend fun registerUser(@Body user: User): Response<User>
 
-    fun getAll(): Flow<List<User>> {
-        return realm.query<User>().asFlow().map { it.list }
-    }
+    @PUT("editUser/{id}")
+    suspend fun editUser(@Path("id") id: String, @Body fields: Map<String, @JvmSuppressWildcards Any>): Response<User>
 
-    suspend fun getById(id: String): User? {
-        return realm.query<User>("id == $0", id).first().find()
-    }
+    @DELETE("deleteUser/{id}")
+    suspend fun deleteUser(@Path("id") id: String): Response<Unit>
 
-    suspend fun deleteById(id: String) {
-        realm.write {
-            val user = query<User>("id == $0", id).first().find()
-            user?.let { delete(it) }
-        }
-    }
-    suspend fun update(user: User): Boolean {
+    @GET("findUserByUsername/{username}")
+    suspend fun findUserByUsername(@Path("username") username: String): Response<List<User>>
 
-        var success = false
-        realm.write {
-            val existingUser = query<User>("id == $0", user.id).first().find()
-            existingUser?.let {
-                it.username = user.username
-                it.email = user.email
-                it.age = user.age
-                it.gender = user.gender
-                it.country = user.country
-                it.bio = user.bio
-                it.avatarUrl = user.avatarUrl
-                it.centralPoint = user.centralPoint
-                it.radius = user.radius
-                success = true
-            }
-        }
-        return success
-    }
+    @GET("getUser/{id}")
+    suspend fun getUserById(@Path("id") id: String): Response<User>
 
-    suspend fun getAchievements(user: User): List<Achievement> {
-        // 1. Obtener las IDs de los logros del usuario usando la tabla intermedia
-        val achievementIds = realm.query<UserAchievements>("userId == $0", user.id)
-            .find()
-            .map { it.achievementId }
+    @POST("login")
+    suspend fun login(@Body loginRequest: Map<String, String>): Response<User>
+}
 
-        // 2. Si no hay logros, devolver lista vacía
-        if (achievementIds.isEmpty()) return emptyList()
-
-        // 3. Buscar los logros con esas IDs
-        return realm.query<Achievement>("_id IN $0", achievementIds)
-            .find()
-    }
-
+class UserDAO(private val api: UserApi) {
+    suspend fun registerUser(user: User): User? = api.registerUser(user).body()
+    suspend fun editUser(id: String, fields: Map<String, Any>): User? = api.editUser(id, fields).body()
+    suspend fun deleteUser(id: String): Boolean = api.deleteUser(id).isSuccessful
+    suspend fun findUserByUsername(username: String): List<User> = api.findUserByUsername(username).body() ?: emptyList()
+    suspend fun getUserById(id: String): User? = api.getUserById(id).body()
+    suspend fun login(email: String, password: String): User? =
+        api.login(mapOf("email" to email, "password" to password)).body()
 }

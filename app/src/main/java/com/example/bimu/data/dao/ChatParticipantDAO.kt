@@ -1,44 +1,23 @@
 package com.example.bimu.data.dao
 
 import com.example.bimu.data.models.ChatParticipant
-import io.realm.kotlin.Realm
-import io.realm.kotlin.ext.query
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import org.mongodb.kbson.ObjectId
+import retrofit2.Response
+import retrofit2.http.*
 
-class ChatParticipantDAO(private val realm: Realm) {
+interface ChatParticipantApi {
+    @POST("chatParticipants") suspend fun addParticipant(@Body participant: ChatParticipant): Response<ChatParticipant>
+    @DELETE("chatParticipants/{id}") suspend fun removeParticipant(@Path("id") id: String): Response<Unit>
+    @GET("chatParticipants/chat/{chatroomId}") suspend fun getUsersInChat(@Path("chatroomId") chatroomId: String): Response<List<String>>
+    @GET("chatParticipants/user/{userId}") suspend fun getChatsForUser(@Path("userId") userId: String): Response<List<String>>
+}
 
-    suspend fun addParticipant(chatRoomId: String, userId: String) {
-        realm.write {
-            copyToRealm(ChatParticipant().apply {
-                this.chatroomId = chatRoomId
-                this.userId = userId
-            })
-        }
-    }
-
-    suspend fun removeParticipant(chatRoomId: String, userId: String) {
-        realm.write {
-            val participant = query<ChatParticipant>(
-                "chatRoomId == $0 AND userId == $1",
-                chatRoomId,
-                userId
-            ).first().find()
-
-            participant?.let { delete(it) }
-        }
-    }
-
-    fun getUsersInChat(chatRoomId: String): Flow<List<String>> {
-        return realm.query<ChatParticipant>("chatRoomId == $0", chatRoomId)
-            .asFlow()
-            .map { results -> results.list.map { it.userId } }
-    }
-
-    fun getChatsForUser(userId: String): Flow<List<String>> {
-        return realm.query<ChatParticipant>("userId == $0", userId)
-            .asFlow()
-            .map { results -> results.list.map { it.chatroomId } }
-    }
+class ChatParticipantDAO(private val api: ChatParticipantApi) {
+    suspend fun addParticipant(participant: ChatParticipant): ChatParticipant? =
+        api.addParticipant(participant).body()
+    suspend fun removeParticipant(id: String): Boolean =
+        api.removeParticipant(id).isSuccessful
+    suspend fun getUsersInChat(chatroomId: String): List<String> =
+        api.getUsersInChat(chatroomId).body() ?: emptyList()
+    suspend fun getChatsForUser(userId: String): List<String> =
+        api.getChatsForUser(userId).body() ?: emptyList()
 }

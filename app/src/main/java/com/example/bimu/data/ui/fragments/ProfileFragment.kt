@@ -1,57 +1,42 @@
 package com.example.bimu.data.ui.fragments
 
+import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.view.*
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresPermission
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.Spinner
-import android.widget.TextView
-import android.widget.Toast
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.semantics.error
-import androidx.compose.ui.semantics.text
-import androidx.compose.ui.tooling.data.position
-import androidx.wear.compose.material.placeholder
-// Importa tus clases UserDAO, AuxClass, GeoPoint, User
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.bimu.R
 import com.example.bimu.data.dao.UserDAO
 import com.example.bimu.data.models.AuxClass
-import com.example.bimu.data.models.GeoPoint // Asegúrate que este es tu modelo GeoPoint
+import com.example.bimu.data.models.GeoPoint
 import com.example.bimu.data.models.User
-import io.realm.kotlin.Realm
-import io.realm.kotlin.mongodb.App // Si AuxClass lo necesita, o donde inicialices UserDAO
-import io.realm.kotlin.mongodb.sync.SyncConfiguration
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.example.bimu.data.network.ApiClient
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
-import org.osmdroid.views.overlay.Marker // Para el marcador del mapa
-import org.osmdroid.util.GeoPoint as OsmdroidGeoPoint // Alias para el GeoPoint de OSMdroid
-
+import org.osmdroid.views.overlay.Marker
+import org.osmdroid.util.GeoPoint as OsmdroidGeoPoint
 
 class ProfileFragment : Fragment() {
-
     private lateinit var userDao: UserDAO
     private lateinit var aux: AuxClass
-
     private var user: User? = null
     private var selectedGeoPoint: GeoPoint? = null
     private var selectedProfileImageUri: Uri? = null
 
-    //Inicializamos la variable realm para poder realizar operaciones fuera del hilo principal
-    private lateinit var realm: Realm
-
+    // UI components
     private lateinit var imageViewProfile: ImageView
     private lateinit var buttonSelectProfileImage: Button
     private lateinit var editTextUsername: EditText
@@ -60,6 +45,7 @@ class ProfileFragment : Fragment() {
     private lateinit var spinnerGender: Spinner
     private lateinit var spinnerLevel: Spinner
     private lateinit var editTextRadius: EditText
+    private lateinit var buttonUseCurrentLocation: Button
     private lateinit var mapView: org.osmdroid.views.MapView
     private lateinit var textViewLocation: TextView
     private lateinit var buttonSave: Button
@@ -69,27 +55,45 @@ class ProfileFragment : Fragment() {
 
     private val SELECT_IMAGE_REQUEST_CODE = 101
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Inicializamos userDao y aux
-        val appId = "bimu-app-wyaznyg"
-        val realmApp = App.create(appId)
-        realm= Realm.open(SyncConfiguration.Builder(realmApp.currentUser!!, setOf(User::class)).build())
-        userDao = UserDAO(realm)
-        aux = AuxClass()
+    // === NUEVO: Launcher para permisos de localización ===
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        // Comprobar explícitamente de nuevo (por si acaso) ANTES de llamar a la función
+        val context = requireContext()
+        if (fineLocationGranted || coarseLocationGranted) {
+            if (
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ) {
+                centerMapOnUserLocation()
+            } else {
+                Toast.makeText(context, "Permiso de ubicación no concedido.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
+        }
     }
 
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        aux = AuxClass()
+        userDao = UserDAO(ApiClient.userApi)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_profile, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState) // Buena práctica llamar a super
+        super.onViewCreated(view, savedInstanceState)
 
         imageViewProfile = view.findViewById(R.id.imageViewProfile)
         buttonSelectProfileImage = view.findViewById(R.id.buttonSelectProfileImage)
@@ -99,6 +103,7 @@ class ProfileFragment : Fragment() {
         spinnerGender = view.findViewById(R.id.spinnerGender)
         spinnerLevel = view.findViewById(R.id.spinnerLevel)
         editTextRadius = view.findViewById(R.id.editTextRadius)
+        buttonUseCurrentLocation = view.findViewById(R.id.buttonUseCurrentLocation)
         mapView = view.findViewById(R.id.mapView)
         textViewLocation = view.findViewById(R.id.textViewLocation)
         buttonSave = view.findViewById(R.id.buttonSave)
@@ -106,182 +111,234 @@ class ProfileFragment : Fragment() {
         spinnerGender.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, genders)
         spinnerLevel.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, levels)
 
+        // Configuración de osmdroid
         val ctx = requireContext().applicationContext
         Configuration.getInstance().userAgentValue = requireContext().packageName
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
-
         mapView.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.controller.setZoom(15.0)
+        setupMapTouchOverlay()
 
+        buttonSelectProfileImage.setOnClickListener { selectImageFromGallery() }
+        buttonSave.setOnClickListener { guardarCambios() }
+        buttonUseCurrentLocation.setOnClickListener { requestLocationPermissionAndCenterMap() }
+
+        cargarUsuario()
+    }
+
+    private fun setupMapTouchOverlay() {
         mapView.overlays.clear()
         val mapEventsOverlay = object : org.osmdroid.views.overlay.Overlay() {
             override fun onSingleTapConfirmed(e: MotionEvent, mapView: org.osmdroid.views.MapView): Boolean {
                 val projection = mapView.projection
                 val iGeoPoint = projection.fromPixels(e.x.toInt(), e.y.toInt()) as OsmdroidGeoPoint
-                selectedGeoPoint = GeoPoint(iGeoPoint.latitude, iGeoPoint.longitude) // Usar tu clase GeoPoint
-                mapView.overlays.clear() // Limpia marcadores anteriores antes de añadir uno nuevo
+                selectedGeoPoint = GeoPoint(iGeoPoint.latitude, iGeoPoint.longitude)
+                mapView.overlays.clear()
                 val marker = Marker(mapView)
                 marker.position = iGeoPoint
                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 mapView.overlays.add(marker)
                 mapView.invalidate()
-                textViewLocation.text = "Latitud: ${"%.5f".format(iGeoPoint.latitude)}, Longitud: ${"%.5f".format(iGeoPoint.longitude)}"
+                textViewLocation.text = "Latitud: %.5f, Longitud: %.5f".format(iGeoPoint.latitude, iGeoPoint.longitude)
                 return true
             }
         }
         mapView.overlays.add(mapEventsOverlay)
+    }
 
-        buttonSelectProfileImage.setOnClickListener {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, SELECT_IMAGE_REQUEST_CODE)
-        }
-
-        // **AÑADIDO: Listener para el botón de guardar**
-        buttonSave.setOnClickListener {
-            guardarCambios()
-        }
-
-        // **AÑADIDO: Cargar datos del usuario al crear la vista**
-        if (::userDao.isInitialized && ::aux.isInitialized) { // Comprobación adicional
-            cargarUsuario()
-        } else {
-            Toast.makeText(requireContext(), "No se pudieron cargar los datos del usuario. DAO no inicializado.", Toast.LENGTH_LONG).show()
-        }
+    private fun selectImageFromGallery() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent, SELECT_IMAGE_REQUEST_CODE)
     }
 
     private fun cargarUsuario() {
-        // Asegurarse de que aux y userDao están disponibles
-        if (!::aux.isInitialized || !::userDao.isInitialized) {
-            Toast.makeText(requireContext(), "Error: AuxClass o UserDAO no están inicializados.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
         val userId = aux.getUserIdFromPrefs(requireContext())
-        if (userId == null) {
-            Toast.makeText(requireContext(), "No se pudo obtener el ID del usuario.", Toast.LENGTH_SHORT).show()
-            // Podrías querer redirigir al login o manejar este caso de otra forma
-
+        if (userId.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "No hay usuario logueado. Haz login de nuevo.", Toast.LENGTH_SHORT).show()
             return
         }
-
-        CoroutineScope(Dispatchers.Main).launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
-                user = userDao.getById(userId)
-                user?.let { u ->
-                    editTextUsername.setText(u.username)
-                    editTextBio.setText(u.bio ?: "")
-                    editTextAge.setText(u.age?.toString() ?: "")
-
-                    val genderIndex = genders.indexOf(u.gender)
-                    spinnerGender.setSelection(if (genderIndex != -1) genderIndex else genders.indexOf("Otro"))
-
-                    val levelIndex = levels.indexOf(u.level)
-                    spinnerLevel.setSelection(if (levelIndex != -1) levelIndex else levels.indexOf("Novato"))
-
-                    editTextRadius.setText(u.radius?.toString() ?: "5.0")
-
-                    u.centralPoint?.let { gp ->
-                        selectedGeoPoint = gp // Actualiza el GeoPoint seleccionado
-                        val osmGeo = OsmdroidGeoPoint(gp.latitude, gp.longitude)
-                        mapView.controller.setCenter(osmGeo)
-                        mapView.controller.animateTo(osmGeo, 17.0, 1000L) // Zoom y animación
-
-                        // Añadir marcador para la ubicación cargada
-                        mapView.overlays.clear() // Limpiar marcadores existentes
-                        val marker = Marker(mapView)
-                        marker.position = osmGeo
-                        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                        mapView.overlays.add(marker)
-                        mapView.invalidate()
-                        textViewLocation.text = "Latitud: ${"%.5f".format(gp.latitude)}, Longitud: ${"%.5f".format(gp.longitude)}"
-                    } ?: run {
-                        // Si no hay punto central guardado, podrías centrar en una ubicación por defecto
-                        // o intentar obtener la ubicación actual del usuario aquí.
-                        textViewLocation.text = "Toca el mapa para seleccionar tu ubicación"
-                    }
-
-                    u.avatarUrl?.let { uriStr ->
-                        if (uriStr.isNotBlank()) {
-                            try {
-                                Glide.with(this@ProfileFragment)
-                                    .load(Uri.parse(uriStr))
-                                    .placeholder(R.drawable.ic_profile_placeholder) // Añade un placeholder
-                                    .error(R.drawable.ic_profile_error) // Añade una imagen de error
-                                    .into(imageViewProfile)
-                            } catch (e: Exception) {
-                                Toast.makeText(requireContext(), "Error al cargar imagen de perfil", Toast.LENGTH_SHORT).show()
-                                imageViewProfile.setImageResource(R.drawable.ic_profile_error) // Imagen de error por defecto
-                            }
-                        } else {
-                            imageViewProfile.setImageResource(R.drawable.ic_profile_placeholder) // Placeholder si la URL está vacía
-                        }
-                    } ?: imageViewProfile.setImageResource(R.drawable.ic_profile_placeholder) // Placeholder si la URL es nula
-
-                } ?: run {
-                    Toast.makeText(requireContext(), "Usuario no encontrado.", Toast.LENGTH_SHORT).show()
-                    // Podrías querer deshabilitar campos o manejar este caso
+                val fetchedUser = userDao.getUserById(userId)
+                user = fetchedUser
+                if (fetchedUser != null) {
+                    populateUIWithUserData(fetchedUser)
+                } else {
+                    Toast.makeText(requireContext(), "Perfil de usuario no encontrado.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error al cargar datos del usuario: ${e.message}", Toast.LENGTH_LONG).show()
-                // Manejar el error, quizás mostrar valores por defecto o deshabilitar la UI.
+                Toast.makeText(requireContext(), "Error al cargar perfil: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun populateUIWithUserData(currentUserData: User) {
+        editTextUsername.setText(currentUserData.username ?: "")
+        editTextBio.setText(currentUserData.bio ?: "")
+        editTextAge.setText(currentUserData.age?.toString() ?: "")
+
+        val genderIndex = genders.indexOf(currentUserData.gender)
+        spinnerGender.setSelection(if (genderIndex != -1) genderIndex else genders.indexOf("Otro"))
+
+        val levelIndex = levels.indexOf(currentUserData.level)
+        spinnerLevel.setSelection(if (levelIndex != -1) levelIndex else levels.indexOf("Novato"))
+
+        editTextRadius.setText(currentUserData.radius?.toString() ?: "5.0")
+
+        currentUserData.centralPoint?.let { gp ->
+            selectedGeoPoint = gp
+            val osmGeo = OsmdroidGeoPoint(gp.latitude, gp.longitude)
+            mapView.controller.setCenter(osmGeo)
+            mapView.overlays.clear()
+            val marker = Marker(mapView)
+            marker.position = osmGeo
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            mapView.overlays.add(marker)
+            mapView.invalidate()
+            textViewLocation.text = "Latitud: %.5f, Longitud: %.5f".format(gp.latitude, gp.longitude)
+        } ?: run {
+            centerMapOnDefault()
+        }
+
+        currentUserData.avatarUrl?.let { uriStr ->
+            if (uriStr.isNotBlank()) {
+                try {
+                    Glide.with(this)
+                        .load(Uri.parse(uriStr))
+                        .placeholder(R.drawable.ic_profile_placeholder)
+                        .error(R.drawable.ic_profile_error)
+                        .circleCrop()
+                        .into(imageViewProfile)
+                } catch (e: Exception) {
+                    imageViewProfile.setImageResource(R.drawable.ic_profile_error)
+                }
+            } else {
+                imageViewProfile.setImageResource(R.drawable.ic_profile_placeholder)
+            }
+        } ?: imageViewProfile.setImageResource(R.drawable.ic_profile_placeholder)
+    }
+
+    private fun centerMapOnDefault() {
+        val defaultLat = 40.4168
+        val defaultLon = -3.7038
+        mapView.controller.setCenter(OsmdroidGeoPoint(defaultLat, defaultLon))
+        textViewLocation.text = "Toca el mapa o usa tu ubicación actual"
+    }
+
+    private fun requestLocationPermissionAndCenterMap() {
+        val context = requireContext()
+        if (
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        } else {
+            centerMapOnUserLocation()
+        }
+    }
+
+    private fun centerMapOnUserLocation() {
+        val context = requireContext()
+        if (
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Toast.makeText(context, "Permiso de ubicación no concedido.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as LocationManager
+
+        val location: Location? = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+
+        val lat = location?.latitude
+        val lon = location?.longitude
+
+        if (lat != null && lon != null) {
+            val geoPoint = OsmdroidGeoPoint(lat, lon)
+            mapView.controller.setCenter(geoPoint)
+            mapView.overlays.clear()
+            val marker = Marker(mapView)
+            marker.position = geoPoint
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            mapView.overlays.add(marker)
+            mapView.invalidate()
+            selectedGeoPoint = GeoPoint(lat, lon)
+            textViewLocation.text = "Latitud: %.5f, Longitud: %.5f".format(lat, lon)
+        } else {
+            Toast.makeText(context, "No se pudo obtener la ubicación actual", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun guardarCambios() {
-        // Validación básica (puedes añadir más validaciones)
-        val username = editTextUsername.text.toString()
+        val userId = aux.getUserIdFromPrefs(requireContext())
+        if (userId.isNullOrEmpty() || user == null) {
+            Toast.makeText(requireContext(), "No hay usuario cargado para guardar.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val username = editTextUsername.text.toString().trim()
+        val bio = editTextBio.text.toString().trim()
         val ageStr = editTextAge.text.toString()
+        val radiusStr = editTextRadius.text.toString()
 
         if (username.isBlank()) {
             editTextUsername.error = "El nombre de usuario no puede estar vacío"
-            Toast.makeText(requireContext(), "El nombre de usuario es obligatorio", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "El nombre de usuario es obligatorio.", Toast.LENGTH_SHORT).show()
             return
         }
-
         val age = ageStr.toIntOrNull()
         if (ageStr.isNotBlank() && age == null) {
             editTextAge.error = "Edad inválida"
-            Toast.makeText(requireContext(), "Por favor, introduce una edad válida", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Por favor, introduce una edad válida.", Toast.LENGTH_SHORT).show()
             return
         }
-        if (age != null && (age < 0 || age > 150)) { // Ejemplo de rango de edad
-            editTextAge.error = "Edad fuera de rango"
-            Toast.makeText(requireContext(), "Por favor, introduce una edad realista", Toast.LENGTH_SHORT).show()
+        if (age != null && (age < 0 || age > 120)) {
+            editTextAge.error = "Edad fuera de rango (0-120)"
+            Toast.makeText(requireContext(), "Por favor, introduce una edad realista.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val radius = radiusStr.toDoubleOrNull() ?: 5.0
+        if (radius <= 0) {
+            editTextRadius.error = "El radio debe ser positivo"
+            Toast.makeText(requireContext(), "El radio de búsqueda debe ser un valor positivo.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        user?.let { u ->
-            u.username = username
-            u.bio = editTextBio.text.toString().trim()
-            if (age != null) {
-                u.age = age
-            }
-            u.gender = genders[spinnerGender.selectedItemPosition]
-            u.level = levels[spinnerLevel.selectedItemPosition]
-            u.radius = editTextRadius.text.toString().toDoubleOrNull() ?: 5.0 // Valor por defecto si es inválido
-            u.centralPoint = selectedGeoPoint // Se actualiza al tocar el mapa
+        val fields = mutableMapOf<String, Any>(
+            "username" to username,
+            "bio" to bio,
+            "age" to (age ?: 0),
+            "gender" to genders[spinnerGender.selectedItemPosition],
+            "level" to levels[spinnerLevel.selectedItemPosition],
+            "radius" to radius,
+        )
+        selectedGeoPoint?.let {
+            fields["centralPoint"] = it
+        }
+        // Si tienes subida de imagen a backend, añade "avatarUrl" al map.
 
-            selectedProfileImageUri?.let {
-                u.avatarUrl = it.toString()
-            }
-
-            CoroutineScope(Dispatchers.Main).launch { // Usar Main para iniciar, IO se usa dentro de UserDAO.update si es suspend
-                try {
-                    val success = userDao.update(u)
-                    if (success) {
-                        Toast.makeText(requireContext(), "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "Error: No se pudo actualizar el perfil (usuario no encontrado o error de BD)", Toast.LENGTH_LONG).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Excepción al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val updatedUser = userDao.editUser(userId, fields)
+                if (updatedUser != null) {
+                    Toast.makeText(requireContext(), "Perfil actualizado correctamente.", Toast.LENGTH_SHORT).show()
+                    user = updatedUser
+                    populateUIWithUserData(updatedUser)
+                } else {
+                    Toast.makeText(requireContext(), "Error al actualizar el perfil.", Toast.LENGTH_LONG).show()
                 }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error al guardar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
-        } ?: run {
-            Toast.makeText(requireContext(), "No hay datos de usuario para guardar.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -292,28 +349,27 @@ class ProfileFragment : Fragment() {
                 selectedProfileImageUri = uri
                 Glide.with(this)
                     .load(uri)
-                    .placeholder(R.drawable.ic_profile_placeholder) // Placeholder
-                    .error(R.drawable.ic_profile_error) // Error
-                    .circleCrop() // Opcional: para hacer la imagen circular
+                    .placeholder(R.drawable.ic_profile_placeholder)
+                    .error(R.drawable.ic_profile_error)
+                    .circleCrop()
                     .into(imageViewProfile)
+                // Para guardar la imagen realmente, deberías subirla al backend y guardar la URL.
             }
         }
     }
 
-    // Es buena práctica liberar recursos del mapa en onPause y recargarlos en onResume
     override fun onResume() {
         super.onResume()
-        mapView.onResume() // Importante para el ciclo de vida del mapa
+        mapView.onResume()
     }
 
     override fun onPause() {
         super.onPause()
-        mapView.onPause() // Importante para el ciclo de vida del mapa
+        mapView.onPause()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        mapView.onDetach() // Limpiar el mapa completamente para evitar memory leaks
-        realm.close()
+        mapView.onDetach()
     }
 }

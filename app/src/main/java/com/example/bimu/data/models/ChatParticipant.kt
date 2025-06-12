@@ -1,18 +1,10 @@
 package com.example.bimu.data.models
 
-import io.realm.kotlin.types.RealmObject
-import io.realm.kotlin.types.annotations.PersistedName
-import io.realm.kotlin.types.annotations.PrimaryKey
-import java.util.UUID
 
-class ChatParticipant: RealmObject {
-    @PrimaryKey
-    var id: String = UUID.randomUUID().toString()
+//import java.util.UUID
 
-    @PersistedName("userId")
-    var userId: String = ""
-
-    @PersistedName("chatroomId")
-    var chatroomId: String = ""
-
-}
+data class ChatParticipant(
+    val id: String = "",
+    val userId: String = "",
+    val chatroomId: String = ""
+)

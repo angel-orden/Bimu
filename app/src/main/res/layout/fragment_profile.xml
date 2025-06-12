@@ -9,7 +9,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="8dp"
+        android:gravity="center_horizontal">
 
         <!-- Foto de perfil -->
         <ImageView
@@ -20,67 +21,118 @@
             android:background="@android:drawable/picture_frame"
             android:contentDescription="Foto de perfil"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_profile_placeholder" />
+            android:src="@drawable/ic_profile_placeholder"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
 
         <Button
             android:id="@+id/buttonSelectProfileImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="10dp"
             android:layout_marginBottom="8dp"
             android:text="Seleccionar foto" />
 
-        <!-- Usuario y datos básicos -->
+        <!-- Etiqueta y campo: Usuario -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nombre de usuario"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <EditText
             android:id="@+id/editTextUsername"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginVertical="8dp"
-            android:hint="Nombre de usuario" />
+            android:hint="Nombre de usuario"
+            android:layout_marginBottom="8dp"/>
 
+        <!-- Etiqueta y campo: Biografía -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Biografía"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <EditText
             android:id="@+id/editTextBio"
             android:layout_width="match_parent"
             android:layout_height="90dp"
-            android:layout_marginVertical="8dp"
             android:hint="Biografía"
-            android:inputType="textMultiLine" />
+            android:inputType="textMultiLine"
+            android:layout_marginBottom="8dp"/>
 
-        <!-- Edad -->
+        <!-- Etiqueta y campo: Edad -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edad"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <EditText
             android:id="@+id/editTextAge"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginVertical="8dp"
             android:hint="Edad"
             android:inputType="number"
-            android:maxLength="2" />
+            android:maxLength="3"
+            android:layout_marginBottom="8dp"/>
 
-        <!-- Género -->
+        <!-- Etiqueta y campo: Género -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Género"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <Spinner
             android:id="@+id/spinnerGender"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- Nivel -->
+        <!-- Etiqueta y campo: Nivel -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nivel"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <Spinner
             android:id="@+id/spinnerLevel"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- Radio de búsqueda -->
+        <!-- Etiqueta y campo: Radio de búsqueda -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Radio de búsqueda (km)"
+            android:textSize="13sp"
+            android:textColor="#88000000"
+            android:layout_marginTop="8dp"/>
         <EditText
             android:id="@+id/editTextRadius"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="8dp"
             android:hint="Radio búsqueda (km)"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="8dp"/>
 
-        <!-- Selección del punto central en el mapa -->
+        <!-- Botón de ubicación actual -->
+        <Button
+            android:id="@+id/buttonUseCurrentLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Usar mi ubicación actual" />
+
         <TextView
             android:id="@+id/textViewMapLabel"
             android:layout_width="wrap_content"
@@ -91,7 +143,7 @@
         <org.osmdroid.views.MapView
             android:id="@+id/mapView"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="220dp"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -105,7 +157,11 @@
             android:id="@+id/buttonSave"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:text="Guardar" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
     </LinearLayout>
 </ScrollView>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:padding="16dp">
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Nombre"/>
+        <EditText android:id="@+id/editTextName" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Nombre de la ruta"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Descripción"/>
+        <EditText android:id="@+id/editTextDescription" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Descripción"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Localización"/>
+        <org.osmdroid.views.MapView
+            android:id="@+id/osmMapView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="fitCenter"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dificultad"/>
+        <Spinner android:id="@+id/spinnerDifficulty" android:layout_width="match_parent" android:layout_height="48dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Fecha"/>
+        <EditText
+            android:id="@+id/editTextDate"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Selecciona fecha y hora"
+            android:focusable="false"
+            android:inputType="none"
+            android:clickable="true"/>
+        <Button android:id="@+id/buttonSave" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Guardar"/>
+    </LinearLayout>
+</ScrollView>

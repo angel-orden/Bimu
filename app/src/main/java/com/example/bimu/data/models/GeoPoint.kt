@@ -1,7 +1,9 @@
 package com.example.bimu.data.models
 
 import kotlin.math.abs
+import com.squareup.moshi.JsonClass
 
+@JsonClass(generateAdapter = true)
 class GeoPoint() {
 
     var latitude: Double = 0.0

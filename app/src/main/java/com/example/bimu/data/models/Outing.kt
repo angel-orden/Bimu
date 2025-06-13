@@ -1,5 +1,8 @@
 package com.example.bimu.data.models
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class Outing(
     val _id: String? = null,         // ObjectId como string
     val completed: Boolean = false,

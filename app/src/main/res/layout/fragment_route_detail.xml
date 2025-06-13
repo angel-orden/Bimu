@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_rutas"
+    android:padding="30dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="#96F9F8F3"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textViewRouteName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="15dp"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textViewRouteCreator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="15dp"
+            android:textColor="#888"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/textViewRouteDifficulty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="15dp"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/textViewRouteDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="15dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/textViewRouteDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="15dp"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/buttonEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="Editar"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/buttonDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="Eliminar"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/buttonJoin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unirme"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

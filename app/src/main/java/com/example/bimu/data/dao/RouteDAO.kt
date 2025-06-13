@@ -17,6 +17,9 @@ interface RouteApi {
 
     @POST("searchRoutes")
     suspend fun searchRoutes(@Body params: RouteSearchParams): Response<List<Route>>
+
+    @GET("getRouteById/{routeId}")
+    suspend fun getRouteById(@Path("routeId") routeId: String): Response<Route>
 }
 
 class RouteDAO(private val api: RouteApi) {
@@ -24,4 +27,8 @@ class RouteDAO(private val api: RouteApi) {
     suspend fun editRoute(routeId: String, fields: Map<String, Any>): Route? = api.editRoute(routeId, fields).body()
     suspend fun deleteRoute(routeId: String): Boolean = api.deleteRoute(routeId).isSuccessful
     suspend fun searchRoutes(params: RouteSearchParams): List<Route> = api.searchRoutes(params).body() ?: emptyList()
+    suspend fun getRouteById(routeId: String): Route? {
+        val response = api.getRouteById(routeId)
+        return response.body()
+    }
 }

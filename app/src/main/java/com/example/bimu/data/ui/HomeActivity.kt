@@ -6,9 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.bimu.R
 import com.example.bimu.data.ui.fragments.ChatsFragment
-import com.example.bimu.data.ui.fragments.AchievementsFragment
 import com.example.bimu.data.ui.fragments.ProfileFragment
-import com.example.bimu.data.ui.fragments.RoutesFragment
+import com.example.bimu.data.ui.fragments.RouteListFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : AppCompatActivity() {
@@ -26,13 +25,13 @@ class HomeActivity : AppCompatActivity() {
                 //Si viene desde el registro, se le llevará al perfil para completarlo
                 replaceFragment(ProfileFragment())
             } else {
-                replaceFragment(RoutesFragment())
+                replaceFragment(RouteListFragment())
             }
         }
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_rutas -> replaceFragment(RoutesFragment())
+                R.id.nav_rutas -> replaceFragment(RouteListFragment())
                 R.id.nav_chat -> replaceFragment(ChatsFragment())
                 R.id.nav_perfil -> replaceFragment(ProfileFragment())
                 else -> false

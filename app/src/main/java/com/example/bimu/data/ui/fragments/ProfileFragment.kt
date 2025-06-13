@@ -2,7 +2,6 @@ package com.example.bimu.data.ui.fragments
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -10,10 +9,10 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -104,7 +103,7 @@ class ProfileFragment : Fragment() {
         spinnerLevel = view.findViewById(R.id.spinnerLevel)
         editTextRadius = view.findViewById(R.id.editTextRadius)
         buttonUseCurrentLocation = view.findViewById(R.id.buttonUseCurrentLocation)
-        mapView = view.findViewById(R.id.mapView)
+        mapView = view.findViewById(R.id.osmMapView)
         textViewLocation = view.findViewById(R.id.textViewLocation)
         buttonSave = view.findViewById(R.id.buttonSave)
 
@@ -338,6 +337,7 @@ class ProfileFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Error al guardar: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Log.e("ProfileFragment", "Error al guardar perfil", e)
             }
         }
     }

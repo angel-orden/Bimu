@@ -102,11 +102,13 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1") // O la última estable
     implementation("androidx.constraintlayout:constraintlayout:2.1.4") // Si usas ConstraintLayout en XML
 
-
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation ("com.squareup.okhttp3:okhttp:4.11.0")
     implementation ("com.squareup.moshi:moshi:1.14.0")
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
+    ksp ("com.squareup.moshi:moshi-kotlin-codegen:1.14.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
 
     // Realm Kotlin SDK
     // Usa la misma versión que el plugin de Gradle

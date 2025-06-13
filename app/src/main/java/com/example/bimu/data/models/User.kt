@@ -1,5 +1,8 @@
 package com.example.bimu.data.models
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class User(
     val _id: String? = null,
     val username: String? = null,

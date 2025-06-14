@@ -4,6 +4,7 @@ buildscript {
         google()
         mavenCentral()
         gradlePluginPortal()
+
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.4.1") // Mantén esta, AGP está en google()

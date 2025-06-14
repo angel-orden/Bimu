@@ -26,18 +26,13 @@ import org.osmdroid.views.overlay.Marker
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.util.Log
+import com.example.bimu.data.dao.OutingDAO
+import com.example.bimu.data.models.Outing
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [RouteEditFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RouteEditFragment : Fragment() {
 
     private lateinit var editTextName: EditText
@@ -51,6 +46,7 @@ class RouteEditFragment : Fragment() {
     private var marker: Marker? = null
 
     private val routeDao = RouteDAO(ApiClient.routeApi)
+    private val outingDao = OutingDAO(ApiClient.outingApi)
     private val aux = AuxClass()
     private var route: Route? = null
 
@@ -199,15 +195,43 @@ class RouteEditFragment : Fragment() {
             try {
                 val saved = if (route == null) {
                     val rutaCreada= routeDao.addRoute(routeToSave)
+                    if(rutaCreada != null){
+                        val outing = Outing(
+                            _id = null,
+                            completed = false,                // Puedes poner true si la quieres como finalizada de inicio
+                            joinedAt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date()),
+                            notes = null,                     // O alguna nota por defecto
+                            routeId = rutaCreada._id.toString(),
+                            userId = creatorId
+                        )
+                        outingDao.addOuting(outing)
+                    }
                     Log.d("BIMU", "Ruta creada: $rutaCreada")
                 } else {
                     Log.d("BIMU", "Editando ruta con id: ${routeToSave._id}")
-                    routeDao.editRoute(routeToSave._id.toString(), mapOf(
+                    val editedRoute = routeDao.editRoute(routeToSave._id.toString(), mapOf(
                         "title" to name,
                         "description" to description,
                         "difficulty" to difficulty,
                         "timeStart" to date
                     ))
+                    if (editedRoute != null) {
+                        val creatorOuting = outingDao.getUserOuting(creatorId, editedRoute._id.toString())
+                        if (creatorOuting == null) {
+                            val outing = Outing(
+                                _id = null,
+                                completed = false,
+                                joinedAt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date()),
+                                notes = null,
+                                routeId = routeToSave._id.toString(),
+                                userId = creatorId)
+                            outingDao.addOuting(outing)
+                        }else{
+                           Log.d("BIMU", "Ya está apuntado a la rutaS")
+                        }
+                    }else{
+                        Log.d("BIMU", "Ruta no encontrada")
+                    }
                 }
                 if (saved != null) {
                     Toast.makeText(requireContext(), "Ruta guardada", Toast.LENGTH_SHORT).show()

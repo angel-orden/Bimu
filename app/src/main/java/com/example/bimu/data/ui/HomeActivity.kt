@@ -6,7 +6,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.bimu.R
 import com.example.bimu.data.ui.fragments.ChatsFragment
+import com.example.bimu.data.ui.fragments.ProfileDetailFragment
 import com.example.bimu.data.ui.fragments.ProfileFragment
+import com.example.bimu.data.ui.fragments.RouteHistoryFragment
 import com.example.bimu.data.ui.fragments.RouteListFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -32,11 +34,11 @@ class HomeActivity : AppCompatActivity() {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_rutas -> replaceFragment(RouteListFragment())
-                R.id.nav_chat -> replaceFragment(ChatsFragment())
-                R.id.nav_perfil -> replaceFragment(ProfileFragment())
+                R.id.nav_historial -> replaceFragment(RouteHistoryFragment())
+                R.id.nav_perfil -> replaceFragment(ProfileDetailFragment())
                 else -> false
             }
-            }
+        }
     }
 
     private fun replaceFragment(fragment: Fragment): Boolean {

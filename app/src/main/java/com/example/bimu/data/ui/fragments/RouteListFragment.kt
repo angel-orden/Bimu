@@ -1,6 +1,7 @@
 package com.example.bimu.data.ui.fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -97,7 +98,9 @@ class RouteListFragment : Fragment() {
                         difficulty = "Intermedio"
                     )
                 }
+                Log.d("BIMU", "Lanzando búsqueda automática de rutas con params: $params")
                 routeList = routeDao.searchRoutes(params)
+                Log.d("BIMU", "Rutas encontradas: ${routeList.size}")
                 routeAdapter.submitList(routeList)
             } catch (e: Exception) {
                 Toast.makeText(

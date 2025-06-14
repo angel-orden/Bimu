@@ -330,8 +330,7 @@ class ProfileFragment : Fragment() {
                 val updatedUser = userDao.editUser(userId, fields)
                 if (updatedUser != null) {
                     Toast.makeText(requireContext(), "Perfil actualizado correctamente.", Toast.LENGTH_SHORT).show()
-                    user = updatedUser
-                    populateUIWithUserData(updatedUser)
+                    requireActivity().supportFragmentManager.popBackStack()
                 } else {
                     Toast.makeText(requireContext(), "Error al actualizar el perfil.", Toast.LENGTH_LONG).show()
                 }

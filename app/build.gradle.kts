@@ -130,6 +130,8 @@ dependencies {
     // OpenStreetMap
     implementation("org.osmdroid:osmdroid-android:6.1.18") // O la última estable
 
+    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     // Carga de Imágenes (Glide)
     val glideVersion = "4.16.0" // O la última estable
     implementation("com.github.bumptech.glide:glide:$glideVersion")

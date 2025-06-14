@@ -5,6 +5,8 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -18,16 +20,7 @@ import com.example.bimu.data.models.RouteAdapter
 import com.example.bimu.data.network.ApiClient
 import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [RouteHistoryFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RouteHistoryFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: RouteAdapter
@@ -49,7 +42,14 @@ class RouteHistoryFragment : Fragment() {
 
     private fun loadHistory() {
         val userId = aux.getUserIdFromPrefs(requireContext())
+        val progressBar = view?.findViewById<ProgressBar>(R.id.progressBarHistory)
+        val emptyText = view?.findViewById<TextView>(R.id.emptyText)
+
+        progressBar?.visibility = View.VISIBLE
+        emptyText?.visibility = View.GONE
+
         if (userId.isNullOrEmpty()) {
+            progressBar?.visibility = View.GONE
             Toast.makeText(requireContext(), "Haz login", Toast.LENGTH_SHORT).show()
             return
         }
@@ -61,6 +61,8 @@ class RouteHistoryFragment : Fragment() {
                 if (route != null) routeList.add(route)
             }
             adapter.submitList(routeList)
+            progressBar?.visibility = View.GONE
+            emptyText?.visibility = if (routeList.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
@@ -69,7 +71,7 @@ class RouteHistoryFragment : Fragment() {
             arguments = Bundle().apply { putString("routeId", route._id) }
         }
         requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment) // Usa el id real de tu contenedor de fragments
+            .replace(R.id.fragment_container, fragment)
             .addToBackStack(null)
             .commit()
     }

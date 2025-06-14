@@ -16,6 +16,9 @@ interface OutingApi {
 
     @GET("getUsersByRoute/{routeId}")
     suspend fun getUsersByRouteId(@Path("routeId") routeId: String): Response<List<String>>
+
+    @GET("getUserOuting/{userId}/{routeId}")
+    suspend fun getUserOuting(@Path("userId") userId: String, @Path("routeId") routeId: String): Response<Outing?>
 }
 
 class OutingDAO(private val api: OutingApi) {
@@ -23,4 +26,5 @@ class OutingDAO(private val api: OutingApi) {
     suspend fun deleteOuting(outingId: String): Boolean = api.deleteOuting(outingId).isSuccessful
     suspend fun getRoutesByUserId(userId: String): List<String> = api.getRoutesByUserId(userId).body() ?: emptyList()
     suspend fun getUsersByRouteId(routeId: String): List<String> = api.getUsersByRouteId(routeId).body() ?: emptyList()
+    suspend fun getUserOuting(userId: String, routeId: String): Outing? { return api.getUserOuting(userId, routeId).body() }
 }

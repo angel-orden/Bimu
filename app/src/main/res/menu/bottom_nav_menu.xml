@@ -4,11 +4,12 @@
         android:icon="@drawable/ruta"
         android:title="Rutas" />
     <item
+        android:id="@+id/nav_historial"
+        android:icon="@drawable/historial"
+        android:title="Historial" />
+    <item
         android:id="@+id/nav_perfil"
         android:icon="@drawable/perfil"
         android:title="Perfil" />
-    <item
-        android:id="@+id/nav_chat"
-        android:icon="@drawable/burbuja_de_chat"
-        android:title="Chat" />
 </menu>
+

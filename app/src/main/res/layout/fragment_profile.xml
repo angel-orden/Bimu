@@ -18,12 +18,12 @@
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:layout_gravity="center"
-            android:background="@android:drawable/picture_frame"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/circle_bg"
             android:contentDescription="Foto de perfil"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_profile_placeholder"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp" />
+            android:src="@drawable/ic_profile_placeholder" />
 
         <Button
             android:id="@+id/buttonSelectProfileImage"

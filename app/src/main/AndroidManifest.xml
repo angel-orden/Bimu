@@ -9,6 +9,7 @@
     <application
         android:allowBackup="true"
         android:label="Bimu"
+        android:icon="@mipmap/ic_bimu"
         android:theme="@style/Theme.Bimu">
         <activity
             android:name=".data.ui.HomeActivity"

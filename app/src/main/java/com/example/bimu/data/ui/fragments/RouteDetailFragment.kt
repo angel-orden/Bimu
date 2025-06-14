@@ -18,16 +18,6 @@ import com.example.bimu.data.models.Route
 import com.example.bimu.data.network.ApiClient
 import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [RouteDetailFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RouteDetailFragment : Fragment() {
 
     private lateinit var textName: TextView
@@ -38,12 +28,14 @@ class RouteDetailFragment : Fragment() {
     private lateinit var buttonEdit: Button
     private lateinit var buttonDelete: Button
     private lateinit var buttonJoin: Button
+    private lateinit var buttonLeave: Button
 
     private val routeDao = RouteDAO(ApiClient.routeApi)
     private val outingDao = OutingDAO(ApiClient.outingApi)
     private val aux = AuxClass()
     private var route: Route? = null
     private var userId: String? = null
+    private var outingId: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_route_detail, container, false)
@@ -58,6 +50,7 @@ class RouteDetailFragment : Fragment() {
         buttonEdit = view.findViewById(R.id.buttonEdit)
         buttonDelete = view.findViewById(R.id.buttonDelete)
         buttonJoin = view.findViewById(R.id.buttonJoin)
+        buttonLeave = view.findViewById(R.id.buttonLeave)
 
         userId = aux.getUserIdFromPrefs(requireContext())
 
@@ -80,13 +73,20 @@ class RouteDetailFragment : Fragment() {
                 textDate.text = routeData.timeStart
                 textCreator.text = "Creador: Ángel"
                 val isCreator = routeData.creatorId == userId
+
+                val userOutings = outingDao.getUserOuting(userId ?: "", routeId)
+                val isJoined = userOutings != null
+                outingId = userOutings?._id
+
                 buttonEdit.visibility = if (isCreator) View.VISIBLE else View.GONE
                 buttonDelete.visibility = if (isCreator) View.VISIBLE else View.GONE
-                buttonJoin.visibility = if (!isCreator) View.VISIBLE else View.GONE
+                buttonJoin.visibility = if (!isCreator && !isJoined) View.VISIBLE else View.GONE
+                buttonLeave.visibility = if (!isCreator && isJoined) View.VISIBLE else View.GONE
 
                 buttonEdit.setOnClickListener { editRoute(routeData) }
                 buttonDelete.setOnClickListener { deleteRoute(routeData) }
                 buttonJoin.setOnClickListener { joinRoute(routeData) }
+                buttonLeave.setOnClickListener { leaveRoute(outingId) }
             }
         }
     }
@@ -130,6 +130,22 @@ class RouteDetailFragment : Fragment() {
                 requireActivity().supportFragmentManager.popBackStack()
             } else {
                 Toast.makeText(requireContext(), "No se pudo unir a la ruta", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun leaveRoute(outingId: String?) {
+        if (outingId == null) {
+            Toast.makeText(requireContext(), "No estás apuntado a la ruta", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = outingDao.deleteOuting(outingId)
+            if (result) {
+                Toast.makeText(requireContext(), "Te has borrado de la ruta", Toast.LENGTH_SHORT).show()
+                requireActivity().supportFragmentManager.popBackStack()
+            } else {
+                Toast.makeText(requireContext(), "No se pudo abandonar la ruta", Toast.LENGTH_SHORT).show()
             }
         }
     }

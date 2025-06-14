@@ -70,6 +70,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Unirme"
+            android:layout_marginBottom="6dp"
             android:visibility="gone" />
+        <Button
+            android:id="@+id/buttonLeave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Abandonar"
+            android:layout_marginBottom="6dp"
+            android:visibility="gone" />
+
     </LinearLayout>
 </ScrollView>

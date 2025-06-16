@@ -52,6 +52,30 @@
             android:inputType="numberDecimal"
             android:hint="Ej: 10"/>
 
+        <!-- Añade debajo de los campos de lat/lon/radio lo siguiente -->
+        <EditText
+            android:id="@+id/editTextFromDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Fecha desde (YYYY-MM-DD)"
+            android:inputType="date" />
+
+        <EditText
+            android:id="@+id/editTextToDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Fecha hasta (YYYY-MM-DD)"
+            android:inputType="date" />
+
+        <!-- Puedes añadir un campo de hora si lo deseas -->
+        <EditText
+            android:id="@+id/editTextHour"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Hora aproximada (HH:mm, opcional)"
+            android:inputType="time" />
+
+
         <!-- Dificultad -->
         <TextView
             android:layout_width="wrap_content"

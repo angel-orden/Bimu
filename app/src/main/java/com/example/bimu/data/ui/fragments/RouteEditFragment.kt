@@ -181,14 +181,15 @@ class RouteEditFragment : Fragment() {
             title = name,
             description = description,
             difficulty = difficulty,
-            timeStart = date
+            timeStart = date,
+            locationStart = selectedPoint ?: GeoPoint(40.4168, -3.7038)  // Siempre objeto GeoPoint
         ) ?: Route(
             title = name,
             description = description,
             difficulty = difficulty,
             timeStart = date,
             creatorId = creatorId,
-            locationStart = GeoPoint(0.0, 0.0)
+            locationStart = selectedPoint ?: GeoPoint(40.4168, -3.7038)
         )
 
         viewLifecycleOwner.lifecycleScope.launch {

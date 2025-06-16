@@ -1,5 +1,6 @@
 package com.example.bimu.data.ui.fragments
 
+import RouteFilterDialog
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -9,7 +10,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bimu.R
@@ -19,7 +19,6 @@ import com.example.bimu.data.models.AuxClass
 import com.example.bimu.data.models.GeoPoint
 import com.example.bimu.data.models.Route
 import com.example.bimu.data.models.RouteAdapter
-import com.example.bimu.data.models.RouteFilterDialog
 import com.example.bimu.data.models.RouteSearchParams
 import com.example.bimu.data.models.User
 import com.example.bimu.data.network.ApiClient
@@ -31,7 +30,8 @@ class RouteListFragment : Fragment() {
     private lateinit var routeAdapter: RouteAdapter
     private lateinit var filterButton: Button
     private lateinit var addButton: Button
-    private lateinit var filterDialog: RouteFilterDialog
+    private var filterDialog: RouteFilterDialog? = null
+    private var lastSearchParams: RouteSearchParams? = null
 
     private val routeDao = RouteDAO(ApiClient.routeApi)
     private var routeList: List<Route> = emptyList()
@@ -52,10 +52,41 @@ class RouteListFragment : Fragment() {
         recyclerView.adapter = routeAdapter
 
         filterButton.setOnClickListener {
-            if (!::filterDialog.isInitialized) {
-                filterDialog = RouteFilterDialog(requireContext()) { filterParams -> loadRoutesWithFilters(filterParams) }
+            viewLifecycleOwner.lifecycleScope.launch {
+                if (filterDialog == null) {
+                    // Si no hay filtro anterior, se carga del perfil del usuario
+                    val userId = aux.getUserIdFromPrefs(requireContext())
+                    val user: User? = userDao.getUserById(userId ?: "")
+                    lastSearchParams = lastSearchParams ?: if (user != null && user.centralPoint != null) {
+                        RouteSearchParams(
+                            location = user.centralPoint,
+                            radiusKm = user.radius ?: 25.0,
+                            difficulty = user.level,
+                            fromDate = null,
+                            toDate = null
+                        )
+                    } else {
+                        RouteSearchParams(
+                            location = GeoPoint(40.4168, -3.7038),
+                            radiusKm = 25.0,
+                            difficulty = "Intermedio",
+                            fromDate = null,
+                            toDate = null
+                        )
+                    }
+
+                    filterDialog = RouteFilterDialog(
+                        requireContext(),
+                        lastSearchParams
+                    ) { filterParams ->
+                        lastSearchParams = filterParams
+                        loadRoutesWithFilters(filterParams)
+                    }
+                } else {
+                    filterDialog?.setInitialParams(lastSearchParams)
+                }
+                filterDialog?.show()
             }
-            filterDialog.show()
         }
         addButton.setOnClickListener {
             val fragment = RouteEditFragment()
@@ -69,6 +100,7 @@ class RouteListFragment : Fragment() {
     }
 
     fun loadRoutesWithFilters(params: RouteSearchParams) {
+        lastSearchParams = params
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 routeList = routeDao.searchRoutes(params)
@@ -84,8 +116,7 @@ class RouteListFragment : Fragment() {
             try {
                 val userId = aux.getUserIdFromPrefs(requireContext()).toString()
                 val user: User? = userDao.getUserById(userId)
-
-                val params = if (user != null && user.centralPoint != null && !user.level.isNullOrEmpty()) {
+                lastSearchParams = if (user != null && user.centralPoint != null && !user.level.isNullOrEmpty()) {
                     RouteSearchParams(
                         location = user.centralPoint,
                         radiusKm = user.radius ?: 25.0,
@@ -98,8 +129,8 @@ class RouteListFragment : Fragment() {
                         difficulty = "Intermedio"
                     )
                 }
-                Log.d("BIMU", "Lanzando búsqueda automática de rutas con params: $params")
-                routeList = routeDao.searchRoutes(params)
+                Log.d("BIMU", "Lanzando búsqueda automática de rutas con params: $lastSearchParams")
+                routeList = routeDao.searchRoutes(lastSearchParams!!)
                 Log.d("BIMU", "Rutas encontradas: ${routeList.size}")
                 routeAdapter.submitList(routeList)
             } catch (e: Exception) {

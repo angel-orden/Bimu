@@ -330,7 +330,10 @@ class ProfileFragment : Fragment() {
                 val updatedUser = userDao.editUser(userId, fields)
                 if (updatedUser != null) {
                     Toast.makeText(requireContext(), "Perfil actualizado correctamente.", Toast.LENGTH_SHORT).show()
-                    requireActivity().supportFragmentManager.popBackStack()
+                    // Si no hay pantallas anteriores, vamos a rutas:
+                    if (!requireActivity().supportFragmentManager.popBackStackImmediate()) {
+                        goToRouteListFragment()
+                    }
                 } else {
                     Toast.makeText(requireContext(), "Error al actualizar el perfil.", Toast.LENGTH_LONG).show()
                 }
@@ -370,5 +373,12 @@ class ProfileFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         mapView.onDetach()
+    }
+
+    private fun goToRouteListFragment() {
+        val fragment = RouteListFragment() // O RouteListFragment(), según tu estructura
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment) // Usa el ID correcto de tu container
+            .commit()
     }
 }
